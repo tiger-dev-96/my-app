@@ -1,62 +1,62 @@
-const Koa = require('koa')
-const SocketIO = require('koa-socket-2')
-const serve = require('koa-static')
-const puppeteer = require('puppeteer-core')
+const Koa = require("koa");
+const SocketIO = require("koa-socket-2");
+const serve = require("koa-static");
+const puppeteer = require("puppeteer-core");
 
-const PORT = 3000
-const CHROMIUM_PATH = '/Applications/Chromium.app/Contents/MacOS/Chromium'
+const PORT = 3000;
+const CHROMIUM_PATH = "/Applications/Chromium.app/Contents/MacOS/Chromium";
 
-const app = new Koa()
-const io = new SocketIO()
+const app = new Koa();
+const io = new SocketIO();
 
-app.use(serve('.'))
+app.use(serve("."));
 
-io.attach(app)
+io.attach(app);
 
-io.on('connection', async () => {
-  console.log('a client connected')
-})
+io.on("connection", async () => {
+  console.log("a client connected");
+});
 
-io.on('disconnect', async () => {
-  console.log('a client disconnected')
-})
+io.on("disconnect", async () => {
+  console.log("a client disconnected");
+});
 
-io.on('ready', async (_, url) => {
-  console.log('Launching browser...')
+io.on("ready", async (_, url) => {
+  console.log("Launching browser...");
 
   const browser = await puppeteer.launch({
-    executablePath: CHROMIUM_PATH
-  })
+    executablePath: CHROMIUM_PATH,
+  });
 
-  const page = await browser.newPage()
+  const page = await browser.newPage();
 
-  console.log('Go to page: %s', url)
-  await page.goto(url)
+  console.log("Go to page: %s", url);
+  await page.goto(url);
 
-  const text = await page.evaluate(() => document.body.innerText)
+  const text = await page.evaluate(() => document.body.innerText);
   const textList = text
-    .replace("'", '\x27')
-    .replace('"', '\x22')
-    .split('\n')
-    .filter(text => text !== '')
+    .replace("'", "\x27")
+    .replace('"', "\x22")
+    .split("\n")
+    .filter((text) => text !== "");
 
-  const createCommands = require('./mocks/drawTextCommands')
-  let y = 60
+  const createCommands = require("./mocks/drawTextCommands");
+  let y = 60;
 
-  console.log('Sending draw commands to client...')
+  console.log("Sending draw commands to client...");
 
-  textList.forEach(text => {
-    const commands = createCommands({ text, x: 60, y })
+  textList.forEach((text) => {
+    const commands = createCommands({ text, x: 60, y });
 
-    y += 30
+    y += 30;
 
-    io.broadcast('draw', commands)
-  })
+    io.broadcast("draw", commands);
+  });
 
-  io.broadcast('done')
+  io.broadcast("done");
 
-  await browser.close()
-})
+  await browser.close();
+});
 
-console.log(`Listening on port: ${PORT}`)
-app.listen(PORT)
+console.log(`Listening on port: ${PORT}`);
+app.listen(PORT);
